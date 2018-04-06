@@ -5,6 +5,7 @@ from iHome import db
 from flask_script import Manager
 from flask_migrate import Migrate, MigrateCommand
 from iHome import get_app
+from iHome import models  # 在迁移之前，将模型导入一下
 
 
 # 创建app
