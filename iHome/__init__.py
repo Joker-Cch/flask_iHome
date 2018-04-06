@@ -7,6 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 # session在flask中的扩展包
 from config import configs
+from iHome.utils.common import RegexConverter
 
 
 # 创建可以被外界导入的数据库连接对象
@@ -37,9 +38,16 @@ def get_app(config_name):
     # 使用session在flask扩展实现将session数据存储在redis
     Session(app)
 
+    # 需要现有路由转换器，后面html_blue中才可以直接匹配
+    app.url_map.converters['re'] = RegexConverter
+
     # 注册蓝图
     from iHome.api_1_0 import api
     app.register_blueprint(api)
+
+    # 注册静态页面
+    from iHome.web_html import html_blue
+    app.register_blueprint(html_blue)
 
     return app
 

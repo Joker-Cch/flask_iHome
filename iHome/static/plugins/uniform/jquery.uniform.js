@@ -666,10 +666,10 @@ Enjoy!
 					// Account for input saved across refreshes
 					filenameUpdate();
 
-					// IE7 doesn't fire onChange until blur or second fire.
+					// IE7 doesn't fire onChange util blur or second fire.
 					if (isMsie()) {
 						// IE considers browser chrome blocking I/O, so it
-						// suspends tiemouts until after the file has
+						// suspends tiemouts util after the file has
 						// been selected.
 						bindMany($el, options, {
 							click: function () {
@@ -830,7 +830,7 @@ Enjoy!
 						},
 						"click touchend": function () {
 							// IE7 and IE8 may not update the value right
-							// until after click event - issue #238
+							// util after click event - issue #238
 							var selHtml = $el.find(":selected").html();
 
 							if ($span.html() !== selHtml) {
