@@ -27,7 +27,7 @@ def setupLogging(level):
     # 设置日志的记录等级
     logging.basicConfig(level=level)  # 调试debug级
     # 创建日志记录器，指明日志保存的路径、每个日志文件的最大大小、保存的日志文件个数上限
-    file_log_handler = RotatingFileHandler("logs/log", maxBytes=1024 * 1024 * 100, backupCount=10)
+    file_log_handler = RotatingFileHandler("/home/python/Desktop/flask_iHome/logs/log", maxBytes=1024 * 1024 * 100, backupCount=10)
     # 创建日志记录的格式                 日志等级    输入日志信息的文件名 行数    日志信息
     formatter = logging.Formatter('%(levelname)s %(filename)s:%(lineno)d %(message)s')
     # 为刚创建的日志记录器设置日志记录格式
@@ -39,6 +39,9 @@ def setupLogging(level):
 # default_config == config_name
 def get_app(config_name):
     """工厂方法：根据不同的配置信息，实例化出不同的app"""
+
+    # 调用封装的日志
+    setupLogging(configs[config_name].LOGGIONG_LEVEL)
 
     app = Flask(__name__)
 

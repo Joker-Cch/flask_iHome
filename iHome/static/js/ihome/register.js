@@ -15,14 +15,14 @@ function generateUUID() {
     });
     return uuid;
 }
+
+
 var uuid = "";
 var last_uuid = '';
 // 生成一个图片验证码的编号，并设置页面中图片验证码img标签的src属性
 function generateImageCode() {
     // 1.需要生成UUID
     uuid = generateUUID();
-
-    // last_uuid = uuid;
 
     // 2.拼接请求地址 ： url = /api/1.0/image_code?uuid=uuid
     var url = '/api/1.0/image_code?uuid=' + uuid + '&last_uuid=' + last_uuid;
@@ -36,6 +36,7 @@ function generateImageCode() {
     last_uuid = uuid;
     
 }
+
 
 function sendSMSCode() {
     // 校验参数，保证输入框有数据填写
@@ -61,49 +62,7 @@ function sendSMSCode() {
 
     // TODO: 通过ajax方式向后端接口发送请求，让后端发送短信验证码
     // 要发送给服务端的数据
-    var params = {
-      'mobile':mobile,
-      'imagecode':imageCode,
-      'uuid':uuid
-    };
 
-    $.ajax({
-        url:'/api/1.0/sms_code',        // 请求地址
-        type:'post',                    // 请求方法
-        data:JSON.stringify(params),    // 发送给服务器的数据
-        contentType:'application/json', // 告诉服务器发送的数据时json
-        headers:{'X-CSRFToken':getCookie('csrf_token')}, // 读取的当前页面终端额csrf_token信息发给服务器
-        success:function (response) {   // 请求完成后的回调
-            if (response.errno == '0') {
-                // 发送短信验证码成功
-                // 发送成功后，进行倒计时
-                var num = 30;
-                var t = setInterval(function ()  {
-                    if (num == 0) {
-                        // 倒计时完成,清除定时器
-                        clearInterval(t);
-                        // 重置内容
-                        $(".phonecode-a").html('获取验证码');
-                        // 重新添加点击事件
-                        $(".phonecode-a").attr("onclick", "sendSMSCode();");
-                    } else {
-                        // 正在倒计时，显示秒数
-                        $(".phonecode-a").html(num + '秒');
-                    }
-
-                    num = num - 1;
-                }, 1000);
-            } else {
-                // 发送短信验证码失败
-                // 重新添加点击事件
-                $(".phonecode-a").attr("onclick", "sendSMSCode();");
-                // 重新生成验证码
-                generateImageCode();
-                // 弹出错误消息
-                alert(response.errmsg);
-            }
-        }
-    });
 }
 
 $(document).ready(function() {
@@ -126,60 +85,5 @@ $(document).ready(function() {
     });
 
     // TODO: 注册的提交(判断参数是否为空)
-    $('.form-register').submit(function (event) {
-        // 阻止form表单自己的提交时间
-        event.preventDefault();
 
-        // 读取要发送给服务器的变量：手机号，短信验证码，密码，确认密码
-        var mobile = $('#mobile').val();
-        var phonecode = $('#phonecode').val();
-        var password = $('#password').val();
-        var password2 = $('#password2').val();
-
-        // 校验变量是否存在
-        if (!mobile) {
-            $("#mobile-err span").html("请填写正确的手机号！");
-            $("#mobile-err").show();
-            return;
-        }
-        if (!phonecode) {
-            $('#phone-code-err span').html('请填写短信验证码');
-            $('#phone-code-err').show();
-            return;
-        }
-        if (!password) {
-            $("#password-err span").html("请填写密码!");
-            $("#password-err").show();
-            return;
-        }
-        if (password != password2) {
-            $("#password2-err span").html("两次密码不一致!");
-            $("#password2-err").show();
-            return;
-        }
-
-        // 准备参宿
-        var params = {
-            'mobile':mobile,
-            'sms_code':phonecode,
-            'password':password
-        };
-
-        // 发送注册请求给服务器
-        $.ajax({
-            url:'/api/1.0/users',
-            type:'post',
-            data:JSON.stringify(params),
-            contentType:'application/json',
-            headers:{'X-CSRFToken':getCookie('csrf_token')},
-            success:function (response) {
-                if (response.errno == '0') {
-                    // 如果注册成功，进入到主页
-                    location.href = '/'
-                } else {
-                    alert(response.errmsg);
-                }
-            }
-        });
-    });
 });
