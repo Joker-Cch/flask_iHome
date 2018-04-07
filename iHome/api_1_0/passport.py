@@ -136,3 +136,15 @@ def logout():
     session.pop('mobile')
 
     return jsonify(errno=RET.OK, errmsg=u'退出登录成功')
+
+
+@api.route('/sessions')
+def check_login():
+    """判断用户是否登录
+    0.提示:该接口是用于前端在渲染界面时判断使用的根据不同的登录状态，展示不同的界面
+    """
+
+    user_id = session.get('user_id')
+    name = session.get('name')
+
+    return jsonify(errno=RET.OK, errmsg='OK', data={'user_id': user_id, 'name': name})

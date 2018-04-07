@@ -140,6 +140,9 @@ def set_user_name():
         db.session.rollback()
         return jsonify(errno=RET.DBERR, errmsg='存储用户名失败')
 
+    # 修改用户名时，好需要修改session里面的name
+    session['name'] = new_name
+
     # 6.响应结果
     return jsonify(errno=RET.OK, errmsg='修改用户名成功')
 
@@ -217,6 +220,3 @@ def set_user_auth():
 
     # 6.响应结果
     return jsonify(errno=RET.OK, errmsg=u'实名认证成功')
-
-
-
