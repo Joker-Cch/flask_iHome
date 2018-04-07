@@ -91,7 +91,7 @@ def send_sms_code():
     if not image_server:
         return jsonify(errno=RET.NODATA, errmsg=u'验证码已失效')
 
-    # 4.与客户端传入的图片验证码对比，如果对比成功
+    # 4.与客户端传入的图片验证码对比，如果对比不成功
     if image_server.lower() != image_client.lower():
         return jsonify(errno=RET.DATAERR, errmsg=u'验证码有误')
 
@@ -100,9 +100,9 @@ def send_sms_code():
     current_app.logger.debug('短信验证码为：' + sms_code)
 
     # 6.使用云通讯将短信验证码发送到注册用户手中
-    result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], '1')
-    if result != 1:
-        return jsonify(errno=RET.THIRDERR, errmsg='发送短信验证码失败')
+    # result = CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES / 60], '1')
+    # if result != 1:
+    #     return jsonify(errno=RET.THIRDERR, errmsg='发送短信验证码失败')
 
     # 7.存储短信验证码到redis中:短信验证码在redis中的有效期一定要和短信验证码的提示信息一致
     try:
