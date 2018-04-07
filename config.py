@@ -14,11 +14,11 @@ class Config(object):
     SECRET_KEY = 'AK0j4NSomJQKm8gD/917OniOIC8DEMQRP+xPBvGanEBieaADMBTA0EBTrJdAiXgU'
 
     # 配置mysql数据库:开发中使用真实IP
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@192.168.244.128:3306/flask_iHome'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@192.168.132.128:3306/flask_iHome'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # 配置redis数据库：开发中使用真实IP
-    REDIS_HOST = '192.168.244.128'
+    REDIS_HOST = '192.168.132.128'
     REDIS_PORT = 6379
 
     # 配置session数据存储到redis数据库
@@ -44,7 +44,7 @@ class ProductionConfig(Config):
     """创建线上环境下的配置类"""
 
     # 重写有差异性的配置
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@192.168.72.77:3306/iHome'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@192.168.132.128:3306/iHome'
 
     # 如果是生产环境，日志等级就是WARN
     LOGGIONG_LEVEL = logging.WARN
