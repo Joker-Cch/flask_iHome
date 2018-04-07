@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
 # 实现注册和登录
 
+import re
 from . import api
 from iHome import redis_store, db
 from iHome.models import User
@@ -78,3 +79,46 @@ def register():
     return jsonify(errno=RET.OK, errmsg=u'注册成功')
 
 
+@api.route('/sessions', methods=['POST'])
+def login():
+    """实现登录
+    1.接受请求参数：手机号，明文密码
+    2.判断是否缺少参数，并做手机号格式校验
+    3.使用手机号查询该要登录的用户数据是否存在
+    4.对密码进行校验
+    5.将用户的状态保持信息写入到session
+    6.响应登录结果
+    """
+
+    # 1.接受请求参数：手机号，明文密码
+    json_dict = request.json
+    mobile = json_dict.get('mobile')
+    password = json_dict.get('password')
+
+    # 2.判断是否缺少参数，并做手机号格式校验
+    if not all([mobile, password]):
+        return jsonify(errno=RET.PARAMERR, errmsg=u'缺少参数')
+
+    if not re.match(r'^1[345678][0-9]{9}$', mobile):
+        return jsonify(errno=RET.PARAMERR, errmsg=u'号码格式错误')
+
+    # 3.使用手机号查询该要登录的用户数据是否存在
+    try:
+        user = User.query.filter(User.mobile == mobile).first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'查询用户数据失败')
+    if not user:
+        return jsonify(errno=RET.USERERR, errmsg=u'用户名或密码错误')
+
+    # 4.对密码进行校验
+    if not user.check_password(password):
+        return jsonify(errno=RET.PWDERR, errmsg=u'密码错误')
+
+    # 5.将用户的状态保持信息写入到session
+    session['user_id'] = user.id
+    session['name'] = user.name
+    session['mobile'] = user.mobile
+
+    # 6.响应登录结果
+    return jsonify(errno=RET.OK, errmsg=u'登录成功')

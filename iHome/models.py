@@ -44,10 +44,10 @@ class User(BaseModel, db.Model):
     def to_dict(self):
         """封装要响应的字典"""
         response_data = {
-            'avatar_url': constants.QINIU_DOMIN_PREFIX + (self.avatar_url if self.avatar_url else ""),
             'name': self.name,
             'mobile': self.mobile,
-            'user_id': self.id
+            'user_id': self.id,
+            'avatar_url': constants.QINIU_DOMIN_PREFIX + (self.avatar_url if self.avatar_url else "")
         }
         return response_data
 

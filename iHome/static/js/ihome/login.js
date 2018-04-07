@@ -42,12 +42,12 @@ $(document).ready(function() {
             data:JSON.stringify(params),
             contentType:'application/json',
             headers:{'X-CSRFToken':getCookie('csrf_token')},
-            success:function (resposne) {
-                if (resposne.errno == '0') {
+            success:function (response) {
+                if (response.errno == '0') {
                     // 登录成功进入到主页
                     location.href = '/';
                 } else {
-                    alert(resposne.errmsg);
+                    alert(response.errmsg);
                 }
             }
         });

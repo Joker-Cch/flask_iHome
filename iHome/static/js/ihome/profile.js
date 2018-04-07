@@ -37,15 +37,12 @@ $(document).ready(function () {
                 if (response.errno == '0') {
                     // 上传头像成功，刷新出头像
                     $('#user-avatar').attr('src', response.data);
-                } else if (response.errno == '4101') {
-                    location.href = '/';
                 } else {
                     alert(response.errmsg);
                 }
             }
         });
     });
-
 
     // TODO: 管理用户名修改的逻辑
     $('#form-name').submit(function (event) {
@@ -68,8 +65,6 @@ $(document).ready(function () {
             success:function (response) {
                 if (response.errno == '0') {
                     showSuccessMsg();
-                } else if (response.errno == '4101') {
-                    location.href = '/';
                 } else {
                     alert(response.errmsg);
                 }
