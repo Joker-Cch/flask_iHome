@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 # 实现房屋模块接口
+import datetime
 
 from . import api
 from iHome import db, constants, redis_store
@@ -8,7 +9,7 @@ from iHome.utils.response_code import RET
 from iHome.utils.image_storage import upload_image
 from iHome.constants import AREA_INFO_REDIS_EXPIRES
 from flask import current_app, jsonify, g, request, session
-from iHome.models import Area, Facility, House, HouseImage
+from iHome.models import Area, Facility, House, HouseImage, Order
 
 
 @api.route('/areas')
@@ -240,3 +241,56 @@ def get_house_index():
     # 3.响应结果
     return jsonify(errno=RET.OK, errmsg=u'OK', data=house_dict_list)
 
+
+@api.route('/houses/search')
+def get_houses_search():
+    """搜索房屋列表
+    1.查询所有的房屋信息
+    2.构造响应数据
+    3.响应结果
+    """
+
+    current_app.logger.debug(request.args)
+
+    # 获取参数
+    aid = request.args.get('aid')
+
+    # 获取排序参数: new:最新，按照发布时间倒序; booking:订单量，安装订单量倒序；price-inc 价格低到高；price-des 价格高到低
+    sk = request.args.get('sk')
+
+    # 1.查询所有的房屋信息 houses == [House,House,House,...]
+    try:
+        # 无条件查询所有房屋数据
+        # houses = House.query.all()
+
+        # 得到BaseQuery对象，保存即将要查询出来的数据
+        house_query = House.query
+
+        # 根据用户选中的城区信息，筛选出满足条件的房屋信息
+        if aid:
+            house_query = house_query.filter(House.area_id == aid)
+
+        # 根据排序规则对数据进行排序
+        if sk == 'booking':
+            house_query = house_query.order_by(House.order_count.desc())
+        elif sk == 'price-inc':
+            house_query = house_query.order_by(House.price.asc())
+        elif sk == 'price-des':
+            house_query = house_query.order_by(House.price.desc())
+        else:
+            house_query = house_query.order_by(House.create_time.desc())
+
+        # 无条件的从BaseQuery对象中取出数据
+        houses = house_query.all()
+
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询房屋信息失败')
+
+    # 2.构造响应数据
+    house_dict_list = []
+    for house in houses:
+        house_dict_list.append(house.to_basic_dict())
+
+    # 3.响应结果
+    return jsonify(errno=RET.OK, errmsg='OK', data=house_dict_list)
