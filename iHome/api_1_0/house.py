@@ -2,10 +2,11 @@
 # 实现房屋模块接口
 
 from . import api
-from iHome import db, constants
+from iHome import db, constants, redis_store
 from iHome.utils.common import login_required
 from iHome.utils.response_code import RET
 from iHome.utils.image_storage import upload_image
+from iHome.constants import AREA_INFO_REDIS_EXPIRES
 from flask import current_app, jsonify, g, request, session
 from iHome.models import Area, Facility, House, HouseImage
 
@@ -18,6 +19,14 @@ def get_areas():
     3. 响应结果
     '''
 
+    # 查询缓存数据，如果有缓存数据，就使用缓存数据，反之，就查询，并缓存新查询的数据
+    try:
+        area_dict_list = redis_store.get('Areas')
+        if area_dict_list:
+            return jsonify(errno=RET.OK, errmsg='OK', data=eval(area_dict_list))
+    except Exception as e:
+        current_app.logger.error(e)
+
     # 1.查询所有的城区信息
     try:
         areas = Area.query.all()
@@ -29,6 +38,12 @@ def get_areas():
     area_dict_list = []
     for area in areas:
         area_dict_list.append(area.to_dict())
+
+    # 缓存城区信息到redis : 没有缓存成功也没有影响，因为前端会判断和查询
+    try:
+        redis_store.set('Areas', area_dict_list, constants, AREA_INFO_REDIS_EXPIRES)
+    except Exception as e:
+        current_app.logger.error(e)
 
     # 3.响应结果
     return jsonify(errno=RET.OK, errmsg=u'OK', data=area_dict_list)
@@ -200,3 +215,28 @@ def get_house_detail(house_id):
         'house': response_data,
         'login_user_id': login_user_id
     })
+
+
+@api.route('/houses/index')
+def get_house_index():
+    """提供房屋最新的推荐
+    1.查询最新发布的五个房屋信息,（按照时间排倒序）
+    2.构造响应数据
+    3.响应结果
+    """
+
+    # 1.查询最新发布的五个房屋信息 houses == [House, House, House, ...]
+    try:
+        houses = House.query.order_by(House.create_time.desc()).limit(constants.HOME_PAGE_MAX_HOUSES)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'查询失败')
+
+    # 2.构造响应数据
+    house_dict_list = []
+    for house in houses:
+        house_dict_list.append(house.to_basic_dict())
+
+    # 3.响应结果
+    return jsonify(errno=RET.OK, errmsg=u'OK', data=house_dict_list)
+
