@@ -5,8 +5,8 @@ from . import api
 from iHome import db, constants
 from iHome.utils.common import login_required
 from iHome.utils.response_code import RET
-from flask import current_app, jsonify, g, request
 from iHome.utils.image_storage import upload_image
+from flask import current_app, jsonify, g, request, session
 from iHome.models import Area, Facility, House, HouseImage
 
 
@@ -62,7 +62,8 @@ def pub_house():
     min_days = json_dict.get('min_days')
     max_days = json_dict.get('max_days')
 
-    if not all([title, price, address, area_id, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days]):
+    if not all(
+            [title, price, address, area_id, room_count, acreage, unit, capacity, beds, deposit, min_days, max_days]):
         return jsonify(errno=RET.PARAMERR, errmsg='参数缺失')
 
     # 2.校验参数：price / deposit， 需要用户传入数字
@@ -170,11 +171,32 @@ def upload_house_image():
     return jsonify(errno=RET.OK, errmsg=u'发布房屋图片成功', data={'image_url': image_url})
 
 
+@api.route('/houses/detail/<int:house_id>')
+def get_house_detail(house_id):
+    """提供房屋详情
+    0.获取house_id，通过正则。如果house_id不满足条件不会进入到使用当中
+    1.查询房屋全部信息
+    2.构造响应数据
+    3.响应结果
+    """
 
+    # 1.查询房屋全部信息
+    try:
+        house = House.query.get(house_id)
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'查询房屋数据失败')
+    if not house:
+        return jsonify(errno=RET.NODATA, errmsg=u'房屋不存在')
 
+    # 2.构造响应数据
+    response_data = house.to_full_dict()
 
+    # 获取user_id : 当用户登录后访问detail.html，就会有user_id，反之，没有user_id
+    login_user_id = session.get('user_id', -1)
 
-
-
-
-
+    # 3.响应结果
+    return jsonify(errno=RET.OK, errmsg=u'OK', data={
+        'house': response_data,
+        'login_user_id': login_user_id
+    })

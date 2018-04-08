@@ -3,17 +3,24 @@ function getCookie(name) {
     return r ? r[1] : undefined;
 }
 
-$(document).ready(function(){
+$(document).ready(function () {
     // $('.popup_con').fadeIn('fast');
     // $('.popup_con').fadeOut('fast');
 
     // TODO: 在页面加载完毕之后获取区域信息
     $.get('/api/1.0/areas', function (response) {
-        if (response.errno == '0'){
-            $.each(response.data, function (i, area) {
-                $('#area-id').append('<option value="'+ area.aid +'">'+ area.aname +'</option>');
-            });
-        }  else {
+        if (response.errno == '0') {
+            // $.each(response.data, function (i, area) {
+            //     $('#area-id').append('<option value="'+ area.aid +'">'+ area.aname +'</option>');
+            // });
+
+            // art-template模板引擎渲染页面
+            // 生成要渲染的html数据
+            var html = template('areas-tmpl', {'areas': response.data});
+            // 使用生成的html数据，渲染目标标签
+            $('#area-id').html(html);
+
+        } else {
             alert(response.errmsg);
         }
     });
@@ -56,7 +63,7 @@ $(document).ready(function(){
             contentType: 'application/json',
             headers: {'X-CSRFToken': getCookie('csrf_token')},
             success: function (response) {
-                if (response.errno == '0'){
+                if (response.errno == '0') {
                     // 需求:发布房屋基本信息成功。需要展示发布房屋图片的界面
                     // 隐藏发布基本信息表单。展示发布房屋图片的表单
                     $('#form-house-info').hide();
@@ -65,9 +72,9 @@ $(document).ready(function(){
                     // 将后端生成的house_id传入到上传图片的<input>
                     $('#house-id').val(response.data.house_id);
 
-                }  else if (response.errno == '4101'){
+                } else if (response.errno == '4101') {
                     location.href = '/';
-                }  else {
+                } else {
                     alert(response.errmsg);
                 }
             }
@@ -83,11 +90,11 @@ $(document).ready(function(){
             type: 'post',
             headers: {'X-CSRFToken': getCookie('csrf_token')},
             success: function (response) {
-                if (response.errno == '0'){
-                    $('.house-image-cons').append('<img src="'+response.data.image_url+'">');
-                }  else if (response.errno == '4101'){
+                if (response.errno == '0') {
+                    $('.house-image-cons').append('<img src="' + response.data.image_url + '">');
+                } else if (response.errno == '4101') {
                     location.href = '/';
-                }  else {
+                } else {
                     alert(response.errmsg);
                 }
             }
