@@ -1,7 +1,7 @@
 # -*- coding:utf-8 -*-
 # 实现房屋模块接口
-import datetime
 
+import datetime
 from . import api
 from iHome import db, constants, redis_store
 from iHome.utils.common import login_required
@@ -259,11 +259,30 @@ def get_houses_search():
     sk = request.args.get('sk')
 
     # 获取用户传入的页码
-    p = request.args.get('p')
+    p = request.args.get('p', '1')  # 如果不传，默认第一页
+    # 获取入住时间
+    sd = request.args.get('sd', '')  # u'2018-04-07'
+    # 获取离开时间
+    ed = request.args.get('ed', '')  # u'2018-04-08'
+
+    start_date = None
+    end_date = None
 
     # 校验参数
     try:
         p = int(p)
+
+        if sd:
+            # 将时间字符串转成时间对象
+            start_date = datetime.datetime.strptime(sd, '%Y-%m-%d')
+        if ed:
+            # 将时间字符串转成时间对象
+            end_date = datetime.datetime.strptime(ed, '%Y-%m-%d')
+        # 自己校验入住时间是否小于离开的时间
+        if start_date and end_date:
+            # 断言：入住时间一定小于离开时间，如果不满足，就抛出异常
+            assert start_date < end_date, Exception('入住时间有误')
+
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.PARAMERR, errmsg='参数有误')
@@ -279,6 +298,22 @@ def get_houses_search():
         # 根据用户选中的城区信息，筛选出满足条件的房屋信息
         if aid:
             house_query = house_query.filter(House.area_id == aid)
+
+        # 根据用户传入的入住时间和离开的时间，跟订单里面的时间进行对比
+        # 如果用户传入的时间段，在订单中，也存在，就把满足冲突条件的订单查询出来 conflict_orders
+        conflict_orders = []
+        if start_date and end_date:
+            conflict_orders = Order.query.filter(end_date > Order.begin_date, start_date < Order.end_date).all()
+        elif start_date:
+            conflict_orders = Order.query.filter(start_date < Order.end_date).all()
+        elif end_date:
+            conflict_orders = Order.query.filter(end_date > Order.begin_date).all()
+
+        # 再通过冲突的订单，查询出里面的house_id,封装到列表中 conflict_house_ids
+        if conflict_orders:
+            conflict_house_ids = [order.house_id for order in conflict_orders]
+            # 最后在查询House是，not_in(conflict_house_ids)
+            house_query = house_query.filter(House.id.notin_(conflict_house_ids))
 
         # 根据排序规则对数据进行排序
         if sk == 'booking':
