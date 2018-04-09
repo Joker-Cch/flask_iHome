@@ -86,3 +86,40 @@ def create_order():
 
     # 6.响应结果
     return jsonify(errno=RET.OK, errmsg=u'OK')
+
+
+@api.route('/orders', methods=['GET'])
+@login_required
+def get_order_list():
+    """获取订单列表
+    0. 判断用户是否登录
+    1. 获取当前用户
+    2. 获取当前用户所有订单列表
+    3. 构造数据
+    4. 响应数据
+    """
+    # 1. 获取当前用户
+    user_id = g.user_id
+
+    # 2. 获取当前用户所有订单列表
+    try:
+        orders = Order.query.filter(Order.user_id == user_id).all()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'获取订单列表失败')
+
+    # 3. 构造数据
+    order_dict_list = []
+    for order in orders:
+        order_dict_list.append(order.to_dict())
+
+    # 4. 响应数据
+    return jsonify(errno=RET.OK, errmsg=u'OK', data=order_dict_list)
+
+
+
+
+
+
+
+
