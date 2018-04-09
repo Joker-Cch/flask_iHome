@@ -1,14 +1,12 @@
 # -*- coding:utf-8 -*-
-import datetime
-from flask import current_app
-from flask import g
-from flask import request, jsonify
 
+import datetime
 from iHome import db
 from iHome.api_1_0 import api
 from iHome.models import House, Order
 from iHome.utils.common import login_required
 from iHome.utils.response_code import RET
+from flask import request, jsonify, g, current_app
 
 
 @api.route('/orders', methods=['POST'])
@@ -98,12 +96,26 @@ def get_order_list():
     3. 构造数据
     4. 响应数据
     """
+
+    # 获取用户身份信息
+    role = request.args.get('role')
+    if role not in ['custom', 'landlord']:
+        return jsonify(errno=RET.PARAMERR, errmsg=u'缺少必要参数')
+
     # 1. 获取当前用户
     user_id = g.user_id
 
     # 2. 获取当前用户所有订单列表
     try:
-        orders = Order.query.filter(Order.user_id == user_id).all()
+        if role == 'custom':
+            orders = Order.query.filter(Order.user_id == user_id).all()
+        else:
+            # 查询该登录用户发布的房屋信息
+            houses = House.query.filter(House.user_id == user_id).all()
+            # 获取发布的房屋的ids
+            house_ids = [house.id for house in houses]
+            # 从订单中查询出订单中的house_id在house_ids
+            orders = Order.query.filter(Order.house_id.in_(house_ids)).all()
     except Exception as e:
         current_app.logger.error(e)
         return jsonify(errno=RET.DBERR, errmsg=u'获取订单列表失败')

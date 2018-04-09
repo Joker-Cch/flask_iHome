@@ -18,9 +18,8 @@ $(document).ready(function () {
     $('.modal').on('show.bs.modal', centerModals);      //当模态框出现的时候
     $(window).on('resize', centerModals);
 
-    // TODO: 查询房客订单
-    $.get('/api/1.0/orders', function (response) {
-
+    // TODO: 查询我的订单
+    $.get('/api/1.0/orders?role=custom', function (response) {
         if (response.errno = '0') {
             var html = template('orders-list-tmpl', {'orders': response.data});
             $('.orders-list').html(html);
@@ -29,7 +28,6 @@ $(document).ready(function () {
         } else {
             alert(response.errmsg);
         }
-
     });
 
 
