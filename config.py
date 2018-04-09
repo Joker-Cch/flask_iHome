@@ -14,11 +14,11 @@ class Config(object):
     SECRET_KEY = 'AK0j4NSomJQKm8gD/917OniOIC8DEMQRP+xPBvGanEBieaADMBTA0EBTrJdAiXgU'
 
     # 配置mysql数据库:开发中使用真实IP
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@192.168.132.128:3306/flask_iHome'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/flask_iHome'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
     # 配置redis数据库：开发中使用真实IP
-    REDIS_HOST = '192.168.132.128'
+    REDIS_HOST = '127.0.0.1'
     REDIS_PORT = 6379
 
     # 配置session数据存储到redis数据库
@@ -54,7 +54,7 @@ class UnittestConfig(Config):
     """单元测试的配置"""
 
     # 重写有差异性的配置
-    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/iHome_testcast_07'
+    SQLALCHEMY_DATABASE_URI = 'mysql://root:mysql@127.0.0.1:3306/iHome_test'
 
 
 # 准备工厂设计模式的原材料

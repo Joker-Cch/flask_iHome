@@ -129,9 +129,98 @@ def get_order_list():
     return jsonify(errno=RET.OK, errmsg=u'OK', data=order_dict_list)
 
 
+@api.route('/orders/<int:order_id>', methods=['PUT'])
+@login_required
+def set_order_status(order_id):
+    """确认订单
+    0.判断是否登录
+    1.查询order_id对应的订单信息
+    2.判断当前登录使用是否是该订单的房东
+    3.修改订单的status属性为"已接单"
+    4.更新数据到数据库
+    5.响应结果
+    """
+
+    # 获取action
+    action = request.args.get('action')
+    if action not in ['accept', 'reject']:
+        return jsonify(errno=RET.PARAMERR, errmsg='缺少参数')
+
+    # 1.查询order_id对应的订单信息
+    try:
+        order = Order.query.filter(Order.id == order_id, Order.status == 'WAIT_ACCEPT').first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'查询订单信息失败')
+    if not order:
+        return jsonify(errno=RET.NODATA, errmsg=u'订单不存在')
+
+    # 2.判断当前登录使用是否是该订单的房东
+    login_user_id = g.user_id
+    landlord_user_id = order.house.user_id
+    if login_user_id != landlord_user_id:
+        return jsonify(errno=RET.USERERR, errmsg=u'权限不够')
+
+    # 3.修改订单的status属性为"已接单"
+    if action == 'accept':
+        order.status = 'WAIT_COMMENT'
+    else:
+        order.status = 'REJECTED'
+        # 保存拒单理由
+        reason = request.json.get('reason')
+        if not reason:
+            return jsonify(errno=RET.PARAMERR, errmsg='缺少拒单理由')
+        order.comment = reason  # 一旦被拒单，就无法评价，可以使用一个字段复用
+
+    # 4.更新数据到数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg=u'保存订单状态失败')
+
+    # 5.响应结果
+    return jsonify(errno=RET.OK, errmsg=u'OK')
 
 
+@api.route('/orders/<int:order_id>/comment', methods=['POST'])
+@login_required
+def set_order_comment(order_id):
+    """发表评价
+    0.判断用户是否登录
+    1.接受参数：order_id，comment，判断是否为空
+    2.查询要评价的订单
+    3.设置评价信息，修改订单状态
+    4.保存到数据库
+    5.响应结果
+    """
 
+    # 1.接受参数：order_id，comment，判断是否为空
+    comment = request.json.get('comment')
+    if not comment:
+        return jsonify(errno=RET.PARAMERR, errmsg='缺少参数')
 
+    # 2.查询要评价的订单
+    try:
+        order = Order.query.filter(Order.id == order_id, Order.user_id == g.user_id,
+                                   Order.status == 'WAIT_COMMENT').first()
+    except Exception as e:
+        current_app.logger.error(e)
+        return jsonify(errno=RET.DBERR, errmsg='查询订单数据失败')
+    if not order:
+        return jsonify(errno=RET.NODATA, errmsg='订单不存在')
 
+    # 3.设置评价信息，修改订单状态
+    order.comment = comment
+    order.status = 'COMPLETE'
 
+    # 4.更新数据到数据库
+    try:
+        db.session.commit()
+    except Exception as e:
+        current_app.logger.error(e)
+        db.session.rollback()
+        return jsonify(errno=RET.DBERR, errmsg='保存评价信息失败')
+
+    # 5.响应结果
+    return jsonify(errno=RET.OK, errmsg='OK')
